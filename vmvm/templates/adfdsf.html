@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+    <script>
+        $(document).ready(function () {
+            weather_show();
+        });
+
+        function weather_show() {
+            $('#tm').empty()
+            $.ajax({
+                type: "GET",
+                url: "/check",
+                data: {},
+                success: function (response) {
+                    let rows = response['weathers']
+                    let temp_html = `<span>${rows}</span>`
+                    $('#tm').append(temp_html)
+                }
+            });
+        }
+
+
+    </script>
+
+</head>
+<body>
+<p>이 텍스트는 그냥 보이는겁니다: {{ data }}</p>
+<p id="tm">dfd</p>
+
+<p>/check api data: {{ check_data }}</p>
+<p id="server_time">서버시간 </p>
+
+</body>
+
+</html>

@@ -1,0 +1,735 @@
+Index: projects/homework/app.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from flask import Flask, render_template, request, jsonify\r\napp = Flask(__name__)\r\n\r\nfrom pymongo import MongoClient\r\nimport certifi\r\n\r\nca = certifi.where()\r\n\r\nclient = MongoClient('mongodb+srv://test:sparta@cluster0.mpsb1.mongodb.net/Cluster0?retryWrites=true&w=majority', tlsCAFile=ca)\r\ndb = client.dbsparta\r\n\r\n@app.route('/')\r\ndef home():\r\n   return render_template('index.html')\r\n\r\n@app.route('/cal')\r\ndef cal():\r\n    return render_template('cal.html')\r\n\r\n@app.route(\"/homework\", methods=[\"POST\"])\r\ndef homework_post():\r\n    name_receive = request.form[\"name_give\"]\r\n    comment_receive = request.form[\"comment_give\"]\r\n\r\n    doc = {\r\n        'name': name_receive,\r\n        'comment': comment_receive\r\n    }\r\n\r\n    db.homework.insert_one(doc)\r\n    return jsonify({'msg':'thanks!'})\r\n\r\n@app.route(\"/homework\", methods=[\"GET\"])\r\ndef homework_get():\r\n    comment_list = list(db.homework.find({},{'_id':False}))\r\n    return jsonify({'comments':comment_list})\r\n\r\n\r\nif __name__ == '__main__':\r\n   app.run('0.0.0.0', port=5000, debug=True)
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/projects/homework/app.py b/projects/homework/app.py
+--- a/projects/homework/app.py	(revision bd2ac2392fb9181dbcb445498c0f9ec3756dc86b)
++++ b/projects/homework/app.py	(date 1651647369350)
+@@ -9,32 +9,46 @@
+ client = MongoClient('mongodb+srv://test:sparta@cluster0.mpsb1.mongodb.net/Cluster0?retryWrites=true&w=majority', tlsCAFile=ca)
+ db = client.dbsparta
+ 
++
+ @app.route('/')
+ def home():
+    return render_template('index.html')
+ 
+-@app.route('/cal')
+-def cal():
+-    return render_template('cal.html')
++@app.route("/bucket", methods=["POST"])
++def bucket_post():
++    bucket_receive = request.form['bucket_give']
+ 
+-@app.route("/homework", methods=["POST"])
+-def homework_post():
+-    name_receive = request.form["name_give"]
+-    comment_receive = request.form["comment_give"]
++    bucket_list = list(db.bucket.find({}, {'_id': False}))
++    count = len(bucket_list) + 1
+ 
+     doc = {
+-        'name': name_receive,
+-        'comment': comment_receive
++        'num':count,
++        'bucket':bucket_receive,
++        'done':0
+     }
++    db.bucket.insert_one(doc)
++
++
++    return jsonify({'msg': '등록완료!'})
++
++@app.route("/bucket/done", methods=["POST"])
++def bucket_done():
++    num_receive = request.form['num_give']
++    db.bucket.update_one({'num':int(num_receive)}, {'$set': {'done': 1}})
++    return jsonify({'msg': 'bucket complete'})
+ 
+-    db.homework.insert_one(doc)
+-    return jsonify({'msg':'thanks!'})
++@app.route("/bucket/re", methods=["POST"])
++def re_bucket():
++    re_receive = request.form['num_give']
++    db.bucket.update_one({'num':int(re_receive)}, {'$set': {'done': 0}})
++    return jsonify({'msg': 'return complete'})
+ 
+-@app.route("/homework", methods=["GET"])
+-def homework_get():
+-    comment_list = list(db.homework.find({},{'_id':False}))
+-    return jsonify({'comments':comment_list})
++@app.route("/bucket", methods=["GET"])
++def bucket_get():
+ 
++    bucket_list = list(db.bucket.find({}, {'_id': False}))
++
++    return jsonify({'buckets': bucket_list})
+ 
+ if __name__ == '__main__':
+    app.run('0.0.0.0', port=5000, debug=True)
+\ No newline at end of file
+Index: projects/homework/templates/index.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n\r\n    <meta property=\"og:title\" content=\"10km\" />\r\n    <meta property=\"og:description\" content=\"Cheer up\" />\r\n    <meta property=\"og:image\" content=\"https://cdn.topstarnews.net/news/photo/201807/456143_108614_510.jpg\"/>\r\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css\" rel=\"stylesheet\"\r\n        integrity=\"sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC\" crossorigin=\"anonymous\">\r\n    <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>\r\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js\"\r\n        integrity=\"sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM\"\r\n        crossorigin=\"anonymous\"></script>\r\n\r\n    <title>10km | Cheer up</title>\r\n\r\n    <link href=\"https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;300;400;500;600;700;900&display=swap\" rel=\"stylesheet\">\r\n    <style>\r\n        * {\r\n            font-family: 'Noto Serif KR', serif;\r\n        }\r\n        .mypic {\r\n            width: 100%;\r\n            height: 300px;\r\n\r\n            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://cdn.topstarnews.net/news/photo/201807/456143_108614_510.jpg');\r\n            background-position: center 30%;\r\n            background-size: cover;\r\n\r\n            color: white;\r\n\r\n            display: flex;\r\n            flex-direction: column;\r\n            align-items: center;\r\n            justify-content: center;\r\n        }\r\n\r\n        .mypic > button {\r\n            position: absolute;\r\n            top: 20px;\r\n            right: 20px;\r\n\r\n\r\n        }\r\n\r\n        .mypost {\r\n            width: 95%;\r\n            max-width: 500px;\r\n            margin: 20px auto 20px auto;\r\n\r\n            box-shadow: 0px 0px 3px 0px black;\r\n            padding: 20px;\r\n        }\r\n\r\n        .mypost > button {\r\n            margin-top: 15px;\r\n        }\r\n\r\n        .mycards {\r\n            width: 95%;\r\n            max-width: 500px;\r\n            margin: auto;\r\n        }\r\n\r\n        .mycards > .card {\r\n            margin-top: 10px;\r\n            margin-bottom: 10px;\r\n        }\r\n    </style>\r\n    <script>\r\n        $(document).ready(function () {\r\n            show_comment();\r\n        });\r\n        function save_comment() {\r\n            let name = $('#name').val()\r\n            let comment = $('#comment').val()\r\n\r\n            $.ajax({\r\n                type: \"POST\",\r\n                url: \"/homework\",\r\n                data: {'name_give':name, 'comment_give':comment},\r\n                success: function (response) {\r\n                    alert(response[\"msg\"])\r\n                    window.location.reload()\r\n                }\r\n            });\r\n        }\r\n        function show_comment() {\r\n            $('#comment-list').empty()\r\n            $.ajax({\r\n                type: \"GET\",\r\n                url: \"/homework\",\r\n                data: {},\r\n                success: function (response) {\r\n                    let rows = response['comments']\r\n                    for (let i = 0; i < rows.length; i++) {\r\n                        let name = rows[i]['name']\r\n                        let comment = rows[i]['comment']\r\n\r\n                        let temp_html = `<div class=\"card\">\r\n                                            <div class=\"card-body\">\r\n                                                <blockquote class=\"blockquote mb-0\">\r\n                                                    <p>${comment}</p>\r\n                                                    <footer class=\"blockquote-footer\">${name}</footer>\r\n                                                </blockquote>\r\n                                            </div>\r\n                                        </div>`\r\n                        $('#comment-list').append(temp_html)\r\n                    }\r\n                }\r\n            });\r\n        }\r\n    </script>\r\n</head>\r\n<body>\r\n    <div class=\"mypic\">\r\n        <button onclick=\"window.location.href='/cal'\" type=\"button\" class=\"btn btn-secondary\">Calculator</button>\r\n        <h1>십센치(10cm) 팬명록</h1>\r\n        <p>현재기온: <span id=\"temp\">36</span>도</p>\r\n    </div>\r\n    <div class=\"mypost\">\r\n        <div class=\"form-floating mb-3\">\r\n            <input type=\"text\" class=\"form-control\" id=\"name\" placeholder=\"url\">\r\n            <label for=\"floatingInput\">닉네임</label>\r\n        </div>\r\n        <div class=\"form-floating\">\r\n            <textarea class=\"form-control\" placeholder=\"Leave a comment here\" id=\"comment\"\r\n                style=\"height: 100px\"></textarea>\r\n            <label for=\"floatingTextarea2\">응원댓글</label>\r\n        </div>\r\n        <button onclick=\"save_comment()\" type=\"button\" class=\"btn btn-dark\">댓글 남기기</button>\r\n    </div>\r\n    <div class=\"mycards\" id=\"comment-list\">\r\n        <div class=\"card\">\r\n            <div class=\"card-body\">\r\n                <blockquote class=\"blockquote mb-0\">\r\n                    <p>새로운 앨범 너무 멋져요!</p>\r\n                    <footer class=\"blockquote-footer\">호빵맨</footer>\r\n                </blockquote>\r\n            </div>\r\n        </div>\r\n        <div class=\"card\">\r\n            <div class=\"card-body\">\r\n                <blockquote class=\"blockquote mb-0\">\r\n                    <p>새로운 앨범 너무 멋져요!</p>\r\n                    <footer class=\"blockquote-footer\">호빵맨</footer>\r\n                </blockquote>\r\n            </div>\r\n        </div>\r\n        <div class=\"card\">\r\n            <div class=\"card-body\">\r\n                <blockquote class=\"blockquote mb-0\">\r\n                    <p>새로운 앨범 너무 멋져요!</p>\r\n                    <footer class=\"blockquote-footer\">호빵맨</footer>\r\n                </blockquote>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/projects/homework/templates/index.html b/projects/homework/templates/index.html
+--- a/projects/homework/templates/index.html	(revision bd2ac2392fb9181dbcb445498c0f9ec3756dc86b)
++++ b/projects/homework/templates/index.html	(date 1651647384106)
+@@ -5,29 +5,28 @@
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 
+-    <meta property="og:title" content="10km" />
+-    <meta property="og:description" content="Cheer up" />
+-    <meta property="og:image" content="https://cdn.topstarnews.net/news/photo/201807/456143_108614_510.jpg"/>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
++          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+-        crossorigin="anonymous"></script>
++            integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
++            crossorigin="anonymous"></script>
+ 
+-    <title>10km | Cheer up</title>
++    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+ 
+-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
++    <title>인생 버킷리스트</title>
++
+     <style>
+         * {
+-            font-family: 'Noto Serif KR', serif;
++            font-family: 'Gowun Dodum', sans-serif;
+         }
++
+         .mypic {
+             width: 100%;
+-            height: 300px;
++            height: 200px;
+ 
+-            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://cdn.topstarnews.net/news/photo/201807/456143_108614_510.jpg');
+-            background-position: center 30%;
++            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1601024445121-e5b82f020549?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1189&q=80');
++            background-position: center;
+             background-size: cover;
+ 
+             color: white;
+@@ -38,126 +37,143 @@
+             justify-content: center;
+         }
+ 
+-        .mypic > button {
+-            position: absolute;
+-            top: 20px;
+-            right: 20px;
+-
+-
++        .mypic > h1 {
++            font-size: 30px;
+         }
+ 
+-        .mypost {
++        .mybox {
+             width: 95%;
+-            max-width: 500px;
+-            margin: 20px auto 20px auto;
+-
+-            box-shadow: 0px 0px 3px 0px black;
++            max-width: 700px;
+             padding: 20px;
++            box-shadow: 0px 0px 10px 0px lightblue;
++            margin: 20px auto;
+         }
+ 
+-        .mypost > button {
+-            margin-top: 15px;
++        .mybucket {
++            display: flex;
++            flex-direction: row;
++            align-items: center;
++            justify-content: space-between;
+         }
+ 
+-        .mycards {
+-            width: 95%;
+-            max-width: 500px;
+-            margin: auto;
++        .mybucket > input {
++            width: 70%;
+         }
+ 
+-        .mycards > .card {
+-            margin-top: 10px;
++        .mybox > li {
++            display: flex;
++            flex-direction: row;
++            align-items: center;
++            justify-content: center;
++
+             margin-bottom: 10px;
++            min-height: 48px;
++        }
++
++        .mybox > li > h2 {
++            max-width: 75%;
++            font-size: 20px;
++            font-weight: 500;
++            margin-right: auto;
++            margin-bottom: 0px;
++        }
++
++        .mybox > li > h2.done {
++            text-decoration: line-through
+         }
+     </style>
+     <script>
+         $(document).ready(function () {
+-            show_comment();
++            show_bucket();
+         });
+-        function save_comment() {
+-            let name = $('#name').val()
+-            let comment = $('#comment').val()
+ 
++        function show_bucket() {
++            $.ajax({
++                type: "GET",
++                url: "/bucket",
++                data: {},
++                success: function (response) {
++
++                    let rows = response['buckets']
++                    for (let i = 0; i < rows.length; i++) {
++                        let bucket = rows[i]['bucket']
++                        let num = rows[i]['num']
++                        let done = rows[i]['done']
++
++                        let temp_html = ``
++                        if (done == 0) {
++                            temp_html = `<li>
++                                            <h2>✅ ${bucket}</h2>
++                                            <button onClick="done_bucket(${num})" type="button" className="btn btn-outline-primary">완료!</button>
++                                        </li>`
++                        } else {
++                            temp_html = `<li>
++                                            <h2 class="done">✅${bucket}</h2>
++                                            <button onClick="re_bucket(${num})" type="button" className="btn btn-outline-primary">취소!</button>
++                                        </li>`
++                        }
++                        $('#bucket-list').append(temp_html)
++
++                    }
++
++                }
++            });
++        }
++
++        function save_bucket() {
++            let bucket = $('#bucket').val()
+             $.ajax({
+                 type: "POST",
+-                url: "/homework",
+-                data: {'name_give':name, 'comment_give':comment},
++                url: "/bucket",
++                data: {bucket_give: bucket},
+                 success: function (response) {
+                     alert(response["msg"])
+                     window.location.reload()
+                 }
+             });
+         }
+-        function show_comment() {
+-            $('#comment-list').empty()
++
++
++        function done_bucket(num) {
++
+             $.ajax({
+-                type: "GET",
+-                url: "/homework",
+-                data: {},
++                type: "POST",
++                url: "/bucket/done",
++                data: {num_give: num},
+                 success: function (response) {
+-                    let rows = response['comments']
+-                    for (let i = 0; i < rows.length; i++) {
+-                        let name = rows[i]['name']
+-                        let comment = rows[i]['comment']
++                    alert(response["msg"])
++                    window.location.reload()
++                }
++            });
++        }
+ 
+-                        let temp_html = `<div class="card">
+-                                            <div class="card-body">
+-                                                <blockquote class="blockquote mb-0">
+-                                                    <p>${comment}</p>
+-                                                    <footer class="blockquote-footer">${name}</footer>
+-                                                </blockquote>
+-                                            </div>
+-                                        </div>`
+-                        $('#comment-list').append(temp_html)
+-                    }
++        function re_bucket(num) {
++
++
++            $.ajax({
++                type: "POST",
++                url: "/bucket/re",
++                data: {num_give: num},
++                success: function (response) {
++                    alert(response["msg"])
++                    window.location.reload()
+                 }
+             });
+         }
+     </script>
+ </head>
+ <body>
+-    <div class="mypic">
+-        <button onclick="window.location.href='/cal'" type="button" class="btn btn-secondary">Calculator</button>
+-        <h1>십센치(10cm) 팬명록</h1>
+-        <p>현재기온: <span id="temp">36</span>도</p>
+-    </div>
+-    <div class="mypost">
+-        <div class="form-floating mb-3">
+-            <input type="text" class="form-control" id="name" placeholder="url">
+-            <label for="floatingInput">닉네임</label>
+-        </div>
+-        <div class="form-floating">
+-            <textarea class="form-control" placeholder="Leave a comment here" id="comment"
+-                style="height: 100px"></textarea>
+-            <label for="floatingTextarea2">응원댓글</label>
+-        </div>
+-        <button onclick="save_comment()" type="button" class="btn btn-dark">댓글 남기기</button>
+-    </div>
+-    <div class="mycards" id="comment-list">
+-        <div class="card">
+-            <div class="card-body">
+-                <blockquote class="blockquote mb-0">
+-                    <p>새로운 앨범 너무 멋져요!</p>
+-                    <footer class="blockquote-footer">호빵맨</footer>
+-                </blockquote>
+-            </div>
+-        </div>
+-        <div class="card">
+-            <div class="card-body">
+-                <blockquote class="blockquote mb-0">
+-                    <p>새로운 앨범 너무 멋져요!</p>
+-                    <footer class="blockquote-footer">호빵맨</footer>
+-                </blockquote>
+-            </div>
+-        </div>
+-        <div class="card">
+-            <div class="card-body">
+-                <blockquote class="blockquote mb-0">
+-                    <p>새로운 앨범 너무 멋져요!</p>
+-                    <footer class="blockquote-footer">호빵맨</footer>
+-                </blockquote>
+-            </div>
+-        </div>
+-    </div>
++<div class="mypic">
++    <h1>나의 버킷리스트</h1>
++</div>
++<div class="mybox">
++    <div class="mybucket">
++        <input id="bucket" class="form-control" type="text" placeholder="이루고 싶은 것을 입력하세요">
++        <button onclick="save_bucket()" type="button" class="btn btn-outline-primary">기록하기</button>
++    </div>
++</div>
++<div class="mybox" id="bucket-list">
++
++</div>
+ </body>
+ </html>
+\ No newline at end of file
+Index: miniproject/app.py
+===================================================================
+diff --git a/miniproject/app.py b/miniproject/app.py
+deleted file mode 100644
+--- a/miniproject/app.py	(revision da2c9760a576661d826a2c7c77e8fa9865b42798)
++++ /dev/null	(revision da2c9760a576661d826a2c7c77e8fa9865b42798)
+@@ -1,1 +0,0 @@
+-#7조 화이팅
+\ No newline at end of file
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"VcsDirectoryMappings\">\r\n    <mapping directory=\"$PROJECT_DIR$\" vcs=\"Git\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+--- a/.idea/vcs.xml	(revision bd2ac2392fb9181dbcb445498c0f9ec3756dc86b)
++++ b/.idea/vcs.xml	(date 1652256088151)
+@@ -2,5 +2,6 @@
+ <project version="4">
+   <component name="VcsDirectoryMappings">
+     <mapping directory="$PROJECT_DIR$" vcs="Git" />
++    <mapping directory="$PROJECT_DIR$/miniproject" vcs="Git" />
+   </component>
+ </project>
+\ No newline at end of file
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"4603e156-5454-439f-8055-fe7dca94c6c9\" name=\"변경\" comment=\"test\" />\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"MarkdownSettingsMigration\">\r\n    <option name=\"stateVersion\" value=\"1\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"28FLXrC9RHpuwpJb17d68djoOJK\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">{\r\n  &quot;keyToString&quot;: {\r\n    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,\r\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\r\n    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,\r\n    &quot;last_opened_file_path&quot;: &quot;C:/Users/이민석/Desktop/sparta/sparta&quot;,\r\n    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;\r\n  }\r\n}</component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"애플리케이션 수준\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"디폴트 작업\">\r\n      <changelist id=\"4603e156-5454-439f-8055-fe7dca94c6c9\" name=\"변경\" comment=\"\" />\r\n      <created>1650807429559</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1650807429559</updated>\r\n      <workItem from=\"1650807434934\" duration=\"53000\" />\r\n      <workItem from=\"1650807538796\" duration=\"38000\" />\r\n      <workItem from=\"1651317400717\" duration=\"278000\" />\r\n      <workItem from=\"1651317684432\" duration=\"1154000\" />\r\n    </task>\r\n    <task id=\"LOCAL-00001\" summary=\"test\">\r\n      <created>1651318073294</created>\r\n      <option name=\"number\" value=\"00001\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1651318073294</updated>\r\n    </task>\r\n    <option name=\"localTasksCounter\" value=\"2\" />\r\n    <servers />\r\n  </component>\r\n  <component name=\"TypeScriptGeneratedFilesManager\">\r\n    <option name=\"version\" value=\"3\" />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <MESSAGE value=\"test\" />\r\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"test\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision bd2ac2392fb9181dbcb445498c0f9ec3756dc86b)
++++ b/.idea/workspace.xml	(date 1652256088144)
+@@ -1,7 +1,13 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+   <component name="ChangeListManager">
+-    <list default="true" id="4603e156-5454-439f-8055-fe7dca94c6c9" name="변경" comment="test" />
++    <list default="true" id="4603e156-5454-439f-8055-fe7dca94c6c9" name="변경" comment="test">
++      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/sparta.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sparta.iml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/projects/homework/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/projects/homework/app.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/projects/homework/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/projects/homework/templates/index.html" afterDir="false" />
++    </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+@@ -10,8 +16,20 @@
+   <component name="FileTemplateManagerImpl">
+     <option name="RECENT_TEMPLATES">
+       <list>
++        <option value="HTML File" />
+         <option value="Python Script" />
+       </list>
++    </option>
++  </component>
++  <component name="FlaskConsoleOptions" custom-start-script="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))">
++    <envs>
++      <env key="FLASK_APP" value="app" />
++    </envs>
++    <option name="myCustomStartScript" value="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))" />
++    <option name="myEnvs">
++      <map>
++        <entry key="FLASK_APP" value="app" />
++      </map>
+     </option>
+   </component>
+   <component name="Git.Settings">
+@@ -21,20 +39,103 @@
+     <option name="stateVersion" value="1" />
+   </component>
+   <component name="ProjectId" id="28FLXrC9RHpuwpJb17d68djoOJK" />
+-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
++  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
++    <ConfirmationsSetting value="1" id="Add" />
++  </component>
+   <component name="ProjectViewState">
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+   <component name="PropertiesComponent">{
+   &quot;keyToString&quot;: {
++    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+-    &quot;last_opened_file_path&quot;: &quot;C:/Users/이민석/Desktop/sparta/sparta&quot;,
++    &quot;last_opened_file_path&quot;: &quot;C:/Users/이민석/Desktop/타임어택 구현 테스트1 답안&quot;,
+     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+   }
+ }</component>
++  <component name="RecentsManager">
++    <key name="MoveFile.RECENT_KEYS">
++      <recent name="C:\Users\이민석\Desktop\sparta\sparta\projects\homework" />
++    </key>
++  </component>
++  <component name="RunManager" selected="Python.nxy (1)">
++    <configuration name="app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
++      <module name="sparta" />
++      <option name="INTERPRETER_OPTIONS" value="" />
++      <option name="PARENT_ENVS" value="true" />
++      <envs>
++        <env name="PYTHONUNBUFFERED" value="1" />
++      </envs>
++      <option name="SDK_HOME" value="" />
++      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/projects/homework" />
++      <option name="IS_MODULE_SDK" value="true" />
++      <option name="ADD_CONTENT_ROOTS" value="true" />
++      <option name="ADD_SOURCE_ROOTS" value="true" />
++      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
++      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/projects/homework/app.py" />
++      <option name="PARAMETERS" value="" />
++      <option name="SHOW_COMMAND_LINE" value="false" />
++      <option name="EMULATE_TERMINAL" value="false" />
++      <option name="MODULE_MODE" value="false" />
++      <option name="REDIRECT_INPUT" value="false" />
++      <option name="INPUT_FILE" value="" />
++      <method v="2" />
++    </configuration>
++    <configuration name="nxy (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
++      <module name="sparta" />
++      <option name="INTERPRETER_OPTIONS" value="" />
++      <option name="PARENT_ENVS" value="true" />
++      <envs>
++        <env name="PYTHONUNBUFFERED" value="1" />
++      </envs>
++      <option name="SDK_HOME" value="" />
++      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/projects/homework" />
++      <option name="IS_MODULE_SDK" value="true" />
++      <option name="ADD_CONTENT_ROOTS" value="true" />
++      <option name="ADD_SOURCE_ROOTS" value="true" />
++      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
++      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/projects/homework/nxy.py" />
++      <option name="PARAMETERS" value="" />
++      <option name="SHOW_COMMAND_LINE" value="false" />
++      <option name="EMULATE_TERMINAL" value="false" />
++      <option name="MODULE_MODE" value="false" />
++      <option name="REDIRECT_INPUT" value="false" />
++      <option name="INPUT_FILE" value="" />
++      <method v="2" />
++    </configuration>
++    <configuration name="nxy" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
++      <module name="sparta" />
++      <option name="INTERPRETER_OPTIONS" value="" />
++      <option name="PARENT_ENVS" value="true" />
++      <envs>
++        <env name="PYTHONUNBUFFERED" value="1" />
++      </envs>
++      <option name="SDK_HOME" value="" />
++      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
++      <option name="IS_MODULE_SDK" value="true" />
++      <option name="ADD_CONTENT_ROOTS" value="true" />
++      <option name="ADD_SOURCE_ROOTS" value="true" />
++      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
++      <option name="SCRIPT_NAME" value="C:\Users\이민석\Desktop\sparta\sparta\projects\homework\nxy.py" />
++      <option name="PARAMETERS" value="" />
++      <option name="SHOW_COMMAND_LINE" value="false" />
++      <option name="EMULATE_TERMINAL" value="false" />
++      <option name="MODULE_MODE" value="false" />
++      <option name="REDIRECT_INPUT" value="false" />
++      <option name="INPUT_FILE" value="" />
++      <method v="2" />
++    </configuration>
++    <recent_temporary>
++      <list>
++        <item itemvalue="Python.nxy (1)" />
++        <item itemvalue="Python.app" />
++        <item itemvalue="Python.nxy" />
++      </list>
++    </recent_temporary>
++  </component>
+   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="애플리케이션 수준" UseSingleDictionary="true" transferred="true" />
+   <component name="TaskManager">
+     <task active="true" id="Default" summary="디폴트 작업">
+@@ -47,6 +148,9 @@
+       <workItem from="1650807538796" duration="38000" />
+       <workItem from="1651317400717" duration="278000" />
+       <workItem from="1651317684432" duration="1154000" />
++      <workItem from="1651387321936" duration="3845000" />
++      <workItem from="1651472982119" duration="12681000" />
++      <workItem from="1651487530329" duration="39000" />
+     </task>
+     <task id="LOCAL-00001" summary="test">
+       <created>1651318073294</created>
+@@ -76,4 +180,8 @@
+     <MESSAGE value="test" />
+     <option name="LAST_COMMIT_MESSAGE" value="test" />
+   </component>
++  <component name="com.intellij.coverage.CoverageDataManagerImpl">
++    <SUITE FILE_PATH="coverage/sparta$app.coverage" NAME="app 커버리지 결과" MODIFIED="1651480606269" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/projects/homework" />
++    <SUITE FILE_PATH="coverage/sparta$nxy__1_.coverage" NAME="nxy (1) 커버리지 결과" MODIFIED="1651486649933" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/projects/homework" />
++  </component>
+ </project>
+\ No newline at end of file
+Index: .idea/sparta.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"PYTHON_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\">\r\n    <content url=\"file://$MODULE_DIR$\">\r\n      <excludeFolder url=\"file://$MODULE_DIR$/venv\" />\r\n    </content>\r\n    <orderEntry type=\"inheritedJdk\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n  </component>\r\n  <component name=\"TemplatesService\">\r\n    <option name=\"TEMPLATE_FOLDERS\">\r\n      <list>\r\n        <option value=\"$MODULE_DIR$/projects/mars/templates\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n</module>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/sparta.iml b/.idea/sparta.iml
+--- a/.idea/sparta.iml	(revision bd2ac2392fb9181dbcb445498c0f9ec3756dc86b)
++++ b/.idea/sparta.iml	(date 1651391261198)
+@@ -4,7 +4,7 @@
+     <content url="file://$MODULE_DIR$">
+       <excludeFolder url="file://$MODULE_DIR$/venv" />
+     </content>
+-    <orderEntry type="inheritedJdk" />
++    <orderEntry type="jdk" jdkName="Python 3.8" jdkType="Python SDK" />
+     <orderEntry type="sourceFolder" forTests="false" />
+   </component>
+   <component name="TemplatesService">
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ProjectRootManager\" version=\"2\" project-jdk-name=\"Python 3.10 (sparta)\" project-jdk-type=\"Python SDK\" />\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+--- a/.idea/misc.xml	(revision bd2ac2392fb9181dbcb445498c0f9ec3756dc86b)
++++ b/.idea/misc.xml	(date 1651391261216)
+@@ -1,4 +1,4 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (sparta)" project-jdk-type="Python SDK" />
++  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.8" project-jdk-type="Python SDK" />
+ </project>
+\ No newline at end of file
+Index: miniproject/templates/index.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Title</title>\r\n</head>\r\n<body>\r\n\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/miniproject/templates/index.html b/miniproject/templates/index.html
+--- a/miniproject/templates/index.html	(revision da2c9760a576661d826a2c7c77e8fa9865b42798)
++++ b/miniproject/templates/index.html	(date 1652251204802)
+@@ -1,10 +1,131 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
++
+     <meta charset="UTF-8">
+-    <title>Title</title>
++    <title>영화어때 회원가입</title>
++
++    <!-- bootstrap 버튼-->
++        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
++          integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
++
++
++
++    <script src="jquery-3.4.1.js"></script>
++
++    <style>
++
++
++        @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Hi+Melody&display=swap');
++
++        * {
++            margin: 0;
++            padding: 0;
++            box-sizing: border-box;
++        }
++
++        body {
++            font-family: 'Hi Melody', cursive;
++            display: flex;
++            justify-content: center;
++            align-items: center;
++            height : 100vh;
++            background: url('https://i.pinimg.com/736x/d8/f3/42/d8f342a4b795676016edfc402bb2eb40.jpg') no-repeat center;
++            background-size: cover;
++            z-index: 1;
++        }
++        body::before {
++            content:"";
++            position:absolute; z-index: -1;
++            top:0; right: 0 ; bottom: 0; left: 0;
++            background-color: rgba(0,0,0,.0) ;
++        }
++
++        table, FORM {
++            border: 1px solid rgba(36, 228, 172, 0.29);
++            border-spacing: 15px;
++        }
++
++
++    </style>
++
++    <script>
++        // 간단한 회원가입 함수입니다.
++        // 아이디, 비밀번호, 닉네임을 받아 DB에 저장합니다.
++        function register() {
++            $.ajax({
++                type: "POST",
++                url: "/api/register",
++                data: {
++                    id_give: $('#userid').val(),
++                    pw_give: $('#userpw').val(),
++                    nickname_give: $('#usernick').val()
++                },
++                success: function (response) {
++                    if (response['result'] == 'success') {
++                        alert('회원가입이 완료되었습니다.')
++                        window.location.href = '/login'
++                    } else {
++                        alert(response['msg'])
++                    }
++                }
++            })
++        }
++
++    </script>
++
+ </head>
+ <body>
++<div id="container">
++    <div class="row_group">
++        <div class="userInput">
++            <h1 class="title">회원가입 페이지</h1>
++            <!-- 아이디 입력 -->
++            <br><br>
++            <h3 class="list">아이디<span id="idError"></span></h3>
++            <div class="field-body">
++                <div class="field">
++                    <div class="control">
++                        <input type="text" class="input" id="userid" aria-describedby="emailHelp"
++                               placeholder="My ID">
++                        <button type="button" class="btn btn-primary btn-sm">중복확인</button>
++                    </div>
++                </div>
++            </div>
++
++
++        </div>
++        <div class="userInput">
++            <!-- 비밀번호 입력 -->
++            <h3 class="list">비밀번호<span id="pwError"></span></h3>
++            <span class="box int_id">
++                <input type="password" class="input" id="userpw" placeholder="My Password">
++            </span>
++        </div>
++
++        <!-- 비밀번호 재확인 입력
++        <div class="userInput">
++            <h3 class="list">비밀번호 재확인<span id="pwCheckError"></span></h3>
++            <span class="box int_id">
++                <input type="password" id="pwCheck" class="int check"
++                                            maxlength="20"></span>
++        </div>
++    </div>
++    -->
++
++    <!-- 성명 입력 -->
++    <div class="userInput">
++        <h3 class="list">닉네임<span id="nameError"></span></h3>
++        <span class="box int_id">
++              <input type="text" class="input" id="usernick" placeholder="My Nickname">
++        </span>
++        <button type="button" class="btn btn-primary btn-sm">중복확인</button>
++    </div>
++    <br><br>
++    <a href="#" class="btn btn-primary active" role="button" data-bs-toggle="button" aria-pressed="true">회원가입
++    </a>
++
++
+ 
+ </body>
+ </html>
+\ No newline at end of file
